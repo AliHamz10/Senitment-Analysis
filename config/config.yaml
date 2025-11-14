@@ -1,0 +1,44 @@
+# AI Face Emotion & Persona Overlay Configuration
+
+camera:
+  backend: avfoundation  # macOS native backend
+  width: 1280
+  height: 720
+  fps: 30
+  warmup_frames: 15
+  prefer_builtin: true  # Prefer Mac built-in camera over Continuity Camera
+  skip_continuity: true  # Skip iPhone Continuity Camera
+
+model:
+  mode: image  # 'image', 'text', 'hybrid', or 'dl'
+  model_name: joeddav/distilbert-base-uncased-go-emotions
+  dl_backend: onnx  # 'onnx' or 'deepface'
+  recent_decay: 0.85
+  bbox_lerp: 0.22
+
+ui:
+  colors:
+    neon_cyan: [200, 220, 255]
+    neon_blue: [160, 90, 255]
+    neon_accent: [180, 140, 255]
+  fps_position: [10, 28]
+  header_position: [20, 40]
+  status_panel_position: [10, 60]
+
+persona:
+  joy: AI Dreamer
+  surprise: Curious Synth
+  anger: Chrome Rebel
+  sadness: Neon Loner
+  confused: Quantum Puzzler
+  happy: Sunset Coder
+  excited: Pulse Rider
+  fear: Circuit Warden
+  disgust: Acid Critic
+  neutral: Calm Sentinel
+
+paths:
+  assets: ai_face_persona/assets
+  screenshots: screenshots
+  models: ai_face_persona/assets
+

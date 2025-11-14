@@ -39,7 +39,38 @@ Thumbs.db
 
 # Project specific
 screenshots/
+logs/
 *.onnx
 *.pth
 *.pt
+
+# Legacy/test files (optional - uncomment if you want to ignore)
+# test_emotion.py
+# import_test.py
+# run_app.py
+# hello.py
+
+# Config (keep template, ignore local overrides)
+config/config.local.yaml
+config/config.local.json
+config/*.local.*
+
+# Logs
+logs/
+*.log
+
+# IDE specific
+.vscode/settings.json
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/shelf
+
+# OS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 

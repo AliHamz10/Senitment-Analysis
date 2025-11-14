@@ -1,283 +1,395 @@
-# AI Face Emotion & Persona Overlay
+# AI Face Emotion Detection System
 
-Created by tubakhxn
+A real-time computer vision application that analyzes facial expressions through webcam input and displays detected emotions with a modern cyberpunk-inspired interface overlay.
 
-Realtime webcam app that detects faces with MediaPipe, infers emotions (fast heuristics or optional DL), and draws a cyberpunk neon HUD with persona labels and screenshot support.
+## Overview
 
-This README collects everything you need to run, tune, and publish the project on GitHub.
+This application combines MediaPipe face detection with advanced emotion recognition algorithms to provide real-time emotion analysis. The system processes video frames from your webcam, detects facial landmarks, and classifies emotions using both heuristic-based analysis and optional deep learning models.
 
----
+## Key Features
 
-## Table of contents
+### Real-Time Face Detection
+- MediaPipe Face Mesh integration for accurate facial landmark detection
+- Automatic face tracking and bounding box generation
+- Support for multiple face detection in frame
 
-- Features
-- Requirements & notes
-- Quick start (recommended: lightweight / ONNX)
-- Full DL install (optional)
-- How it works (architecture)
-- Running the app (detailed)
-- Keyboard controls & runtime tuning
-- Adding an ONNX model (optional)
-- Troubleshooting
-- Packaging for GitHub (tips)
-- Contributing & license
+### Advanced Emotion Recognition
+- Multiple detection modes: fast heuristic analysis or deep learning inference
+- Improved accuracy through enhanced feature extraction:
+  - Eye Aspect Ratio (EAR) calculation using 6-point per-eye analysis
+  - Mouth Aspect Ratio (MAR) for mouth opening detection
+  - Eyebrow position analysis for emotional context
+  - Facial symmetry detection for complex emotions
+- Support for multiple emotion categories: happy, sad, angry, surprised, excited, confused, fear, disgust, neutral
 
----
+### Smart Camera Management
+- Automatic camera device selection and initialization
+- Prioritizes built-in Mac camera over external devices
+- Intelligent Continuity Camera handling (skips iPhone cameras by default)
+- Robust error handling and camera warm-up sequences
 
-## Features
+### Modern User Interface
+- Cyberpunk-inspired HUD overlay with neon effects
+- Multi-layer glow effects and smooth animations
+- Real-time confidence visualization with gradient bars
+- Animated scanline effects and glitch text rendering
+- Configurable color schemes and panel layouts
 
-- Real-time webcam (OpenCV)
-- Face detection + dense landmarks (MediaPipe Face Mesh)
-- Fast image-based emotion heuristics (default, low-latency)
-- Optional DL inference via ONNX (recommended) or DeepFace/TensorFlow (optional)
-- Cyberpunk neon HUD (glow, rounded rect, animated scanline, glitch header text)
-- FPS counter, smooth label/bbox interpolation, fade-on-change animation
-- Screenshot saving (press `S`) with a short shutter sound on Windows
+### Configuration System
+- YAML-based configuration for all application settings
+- Runtime adjustable parameters
+- Separate configuration files for different environments
+- Easy customization without code changes
 
----
+## System Requirements
 
-## Requirements & notes
+- Operating System: macOS (optimized), Windows, or Linux
+- Python: 3.11 or higher (3.12 recommended)
+- Camera: Built-in webcam or external USB camera supported by OpenCV
+- RAM: 4GB minimum (8GB recommended for deep learning modes)
+- Storage: 2GB free space for dependencies and models
 
-- OS: Windows (tested). Linux/macOS should work but audio uses winsound on Windows only.
-- Python: 3.10+ (3.11 recommended)
-- Camera: any webcam supported by OpenCV
+## Installation
 
-This project lives inside the `ai_face_persona/` folder. To avoid import errors run `main.py` from that folder or use the module runner (examples below).
+### Step 1: Clone the Repository
 
----
-
-## Quick start (recommended: lightweight / ONNX)
-
-Run these PowerShell commands from the repository root.
-
-```powershell
-# Create a venv and upgrade pip
-python -m venv .venv
-.venv\Scripts\python -m pip install --upgrade pip
-
-# Install lightweight dependencies (includes onnxruntime for optional DL)
-.venv\Scripts\python -m pip install -r .\ai_face_persona\requirements_nodl.txt
-
-# Run the app from the package folder so local imports resolve
-cd ai_face_persona
-..\.venv\Scripts\python main.py
+```bash
+git clone <repository-url>
+cd sentiment-analysis
 ```
 
-Notes:
+### Step 2: Create Virtual Environment
 
-- Default behavior: the app runs in a fast landmark-based heuristic mode (`mode='image'`) so it's smooth on most machines.
-- To enable DL inference in-app, press `d`. The app will prefer ONNX (no TensorFlow required) if `onnxruntime` and a model file are present.
-
----
-
-## Full DL install (optional)
-
-If you want DeepFace (TensorFlow) or full Hugging Face text-classifier support, install the full set:
-
-```powershell
-.venv\Scripts\python -m pip install -r .\ai_face_persona\requirements.txt
+```bash
+python3.12 -m venv venv
+source venv/bin/activate  # macOS/Linux
+# or
+venv\Scripts\activate  # Windows
 ```
 
-Warning: DeepFace pulls TensorFlow which is large and may have native-ABI issues on Windows. If you see crashes, try `pip install tensorflow-cpu` for a CPU-only wheel compatible with your Python version, or prefer ONNX.
+### Step 3: Install Dependencies
 
----
-
-## How it works (architecture)
-
-- `main.py` — webcam loop, runs detection, queries `EmotionModel`, and draws overlays.
-- `face_detector.py` — wrapper around MediaPipe Face Mesh. Returns bounding box and landmark coordinates in pixel space.
-- `emotion_model.py` — image heuristics (fast), optional Hugging Face text adapter, optional DL via ONNX/DeepFace. Implements temporal smoothing and persona mapping.
-- `overlay_utils.py` — HUD drawing primitives (rounded glow rectangles, scanline animation, glitch text, status panel, FPS, screenshot save).
-
----
-
-## Running the app (tips & examples)
-
-- Run from package folder (recommended):
-
-```powershell
-cd ai_face_persona
-..\.venv\Scripts\python main.py
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-- Run as a module (works from repo root):
+Note: First-time installation may take several minutes as it downloads large dependencies including PyTorch, MediaPipe, and other machine learning libraries.
 
-```powershell
-.venv\Scripts\python -m ai_face_persona.main
+### Step 4: Verify Installation
+
+```bash
+python -c "from src.camera import CameraManager; from src.models import EmotionModel; print('Installation successful')"
 ```
 
-- If you get `ModuleNotFoundError: No module named 'face_detector'`, ensure you ran the command from the `ai_face_persona` folder or use the `-m` module invocation above.
+## Quick Start
 
----
+### Running the Application
 
-## Keyboard controls & runtime tuning
-
-- `S` — save screenshot (written to `screenshots/` with timestamp). Plays a short shutter sound on Windows.
-- `+` / `=` — increase label smoothing (makes displayed label less jittery)
-- `-` — decrease label smoothing (more reactive)
-- `]` / `[` — increase / decrease bounding-box lerp (affects HUD follow speed)
-- `d` — toggle DL inference on/off (OFF by default)
-- `m` — switch DL backend between `onnx` and `deepface` (if available)
-- `ESC` — exit the app
-
-There is a small status panel in the HUD that shows smoothing and DL backend state.
-
----
-
-## Adding an ONNX model (recommended for DL)
-
-To use DL without installing TensorFlow, drop an ONNX emotion model at:
-
-```
-ai_face_persona/assets/emotion_model.onnx
-```
-
-Behavior:
-
-- If DL is enabled and `emotion_model.onnx` exists, the app will use `onnxruntime` for inference.
-- If the file is missing the app attempts to download a default FER+ ONNX model into `assets/` (network required). If the download fails it falls back to heuristics.
-
-Model format notes:
-
-- The included ONNX helper expects a FER+ style model (grayscale 64x64). If you provide a different model, update `ai_face_persona/emotion_model.py` preprocessing and label mapping accordingly.
-
----
-
-## Troubleshooting
-
-- Camera errors: make sure no other program is using the webcam and check Windows Privacy > Camera to allow desktop apps.
-- App won't start / `ModuleNotFoundError`: run from the `ai_face_persona` folder or use `python -m ai_face_persona.main`.
-- ONNX missing: install `onnxruntime` in the venv (it's included in `requirements_nodl.txt`) or provide your model file.
-- DeepFace/TensorFlow crashes: try `pip install tensorflow-cpu` for a CPU-only wheel compatible with your Python version, or stick to ONNX.
-
----
-
-## Packaging for GitHub
-
-- Add an explicit `LICENSE` (MIT recommended). I can add one for you if you'd like.
-- Add a screenshot or short GIF to the README to show the HUD — place images in `assets/` and reference them from the repo README.
-- Keep `requirements_nodl.txt` for demo installs and `requirements.txt` for full DL installs.
-
----
-
-## Contributing
-
-PRs welcome. Suggested improvements:
-
-- Add a pre-trained ONNX model and label mapping for better emotion accuracy.
-- Add small unit tests for import and smoke tests.
-- Improve UI polish and add more persona mappings.
-
----
-
-## License
-
-This project is provided as-is. If you want, I can add an `LICENSE` file (MIT) to the repository.
-
----
-
-Created with love by tubakhxn
-
-# AI Face Emotion & Persona Overlay
-
-Created with love by tubakhxn
-
-A realtime webcam application that detects faces (MediaPipe), infers an emotion (fast landmark heuristics or optional DL via ONNX/DeepFace), and draws a cyberpunk neon HUD with persona overlays and screenshot support.
-
-This README contains everything you need to run, tweak, and publish the project on GitHub.
-
-## Table of contents
-- Features
-- Requirements & notes
-- Quick start (recommended: lightweight / ONNX)
-- Full DL install (optional)
-- How it works (architecture)
-- Running the app (detailed)
-- Keyboard controls & runtime tuning
-- Adding an ONNX model (optional)
-- Troubleshooting
-- Packaging for GitHub (tips)
-- Contributing & license
-
-## Features
-- Real-time webcam (OpenCV)
-- Face detection + dense landmarks (MediaPipe Face Mesh)
-- Fast image-based emotion heuristics (default, low-latency)
-- Optional DL inference via ONNX (recommended) or DeepFace/TensorFlow
-- Cyberpunk neon HUD (glow, rounded rect, scanline, glitch text)
-- FPS counter, smooth label/bbox interpolation, fade-on-change animation
-- Screenshot saving (press `S`) with a shutter sound on Windows
-
-## Requirements & notes
-- OS: Windows (tested), other OS should work but audio uses winsound on Windows only
-- Python: 3.10+ (3.11 recommended)
-- Camera: any webcam supported by OpenCV
-
-Files of interest are inside the `ai_face_persona/` folder. When running, prefer executing from within that folder so relative imports resolve.
-
-## Quick start (recommended: lightweight / ONNX)
-1. Open PowerShell in the project root (where this README is).
-2. Create a virtual environment and install lightweight (ONNX-capable) dependencies:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\python -m pip install --upgrade pip
-.venv\Scripts\python -m pip install -r .\ai_face_persona\requirements_nodl.txt
-```
-
-3. Run the app from the `ai_face_persona` folder:
-
-```powershell
-cd ai_face_persona
-..\.venv\Scripts\python main.py
-```
-
-Created with love by tubakhxn
-# AI Face Emotion & Persona Overlay
-
-Build by Tuba khan
-
-This project shows a real-time webcam feed with face detection (MediaPipe), an
-emotion classifier (Hugging Face "joeddav/distilbert-base-uncased-go-emotions"), and
-an animated cyberpunk neon HUD overlay.
-
-Features
-- Real-time webcam using OpenCV
-- Face detection + landmarks using MediaPipe Face Mesh
-- Emotion recognition using Hugging Face (adapter from facial heuristics)
-- Cyberpunk neon HUD (glow, rounded face rectangle, moving scanline, glitch text)
-- FPS display
-- Press `S` to save a screenshot with overlays (plays a short sound)
-
-Quick start (Windows)
-1. Create and activate a virtual environment (PowerShell):
-
-```powershell
-python -m venv .venv; .\.venv\Scripts\Activate.ps1
-```
-
-2. Install dependencies:
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
-3. Run the app:
-
-```powershell
+```bash
 python main.py
 ```
 
-Notes
-- The first time you run the app, the Hugging Face model will be downloaded (internet required).
-- If the model can't be loaded the app will fallback gracefully to a neutral persona.
-- If you encounter camera access errors, ensure other apps are not using the camera.
+On first launch:
+1. Grant camera permissions when prompted by your operating system
+2. The application will automatically detect and initialize your camera
+3. Emotion detection models will load (may take a few seconds)
+4. The webcam feed with emotion overlay will appear
 
-Files
-- `main.py` - app entrypoint
-- `face_detector.py` - MediaPipe Face Mesh wrapper
-- `emotion_model.py` - Hugging Face classifier adapter + persona mapping
-- `overlay_utils.py` - HUD drawing functions
-- `assets/` - placeholder assets (hud image & font)
+### Basic Usage
 
+- Position yourself in front of the camera
+- The application will automatically detect your face
+- Emotion labels will appear in real-time with confidence scores
+- Press ESC to exit the application
 
+## Configuration
+
+All settings can be customized in `config/config.yaml`. Key configuration sections:
+
+### Camera Settings
+
+```yaml
+camera:
+  prefer_builtin: true      # Prefer built-in camera
+  skip_continuity: true     # Skip iPhone Continuity Camera
+  width: 1280               # Camera resolution width
+  height: 720                # Camera resolution height
+  fps: 30                   # Target frames per second
+```
+
+### Model Settings
+
+```yaml
+model:
+  mode: image               # Detection mode: 'image', 'text', 'hybrid', or 'dl'
+  dl_backend: onnx         # Deep learning backend: 'onnx' or 'deepface'
+  recent_decay: 0.85        # Smoothing factor for emotion transitions
+  confidence_threshold: 0.3  # Minimum confidence to display emotion
+```
+
+### UI Settings
+
+```yaml
+ui:
+  colors:
+    primary: [0, 255, 255]   # Cyan for primary elements
+    secondary: [255, 0, 255] # Magenta for secondary elements
+    accent: [0, 255, 0]     # Green for accent elements
+  positions:
+    emotion_label: [50, 100] # Position of emotion label
+    fps_counter: [50, 50]    # Position of FPS counter
+```
+
+## Keyboard Controls
+
+| Key | Action |
+|-----|--------|
+| ESC | Exit application |
+| S | Save screenshot to `screenshots/` directory |
+| + or = | Increase label smoothing (less jittery) |
+| - | Decrease label smoothing (more reactive) |
+| ] | Increase bounding box follow speed |
+| [ | Decrease bounding box follow speed |
+| d | Toggle deep learning mode ON/OFF |
+| m | Switch DL backend (ONNX ↔ DeepFace) |
+
+## Project Structure
+
+```
+.
+├── src/                    # Main application source code
+│   ├── camera/            # Camera management and face detection
+│   │   ├── camera_manager.py
+│   │   └── face_detector.py
+│   ├── models/            # Emotion detection models
+│   │   └── emotion_model.py
+│   ├── ui/                # UI rendering and overlays
+│   │   └── overlay_utils.py
+│   ├── utils/             # Utilities
+│   │   ├── config.py      # Configuration management
+│   │   └── logger.py      # Logging system
+│   └── main.py            # Main application logic
+├── config/                # Configuration files
+│   └── config.yaml        # Application settings
+├── ai_face_persona/       # Assets and legacy files
+│   ├── assets/           # Fonts, images, model files
+│   └── legacy/           # Legacy code (reference only)
+├── tests/                 # Test utilities
+│   └── test_camera.py    # Camera test script
+├── main.py               # Application entry point
+└── requirements.txt      # Python dependencies
+```
+
+## Architecture
+
+### Camera System
+
+The `CameraManager` class handles all camera operations:
+- Device enumeration and selection
+- Automatic camera initialization with fallback options
+- Frame capture and validation
+- Error recovery and troubleshooting
+
+### Emotion Detection System
+
+The `EmotionModel` class provides multiple detection strategies:
+
+1. **Image Mode (Default)**: Fast heuristic-based analysis using facial landmarks
+   - Calculates geometric features from MediaPipe landmarks
+   - Uses thresholds and scoring algorithms
+   - Low latency, high performance
+
+2. **Text Mode**: Uses Hugging Face text classifier
+   - Converts facial features to text descriptions
+   - Classifies using transformer models
+   - More accurate but slower
+
+3. **Hybrid Mode**: Combines image and text analysis
+   - Best of both approaches
+   - Balanced accuracy and performance
+
+4. **Deep Learning Mode**: Uses ONNX or DeepFace models
+   - Highest accuracy
+   - Requires model files
+   - Higher computational cost
+
+### UI Rendering System
+
+The overlay system provides:
+- Real-time HUD rendering with OpenCV
+- Smooth animations and transitions
+- Configurable visual effects
+- Performance-optimized drawing operations
+
+## Troubleshooting
+
+### Camera Not Opening
+
+1. Check system camera permissions:
+   - macOS: System Settings > Privacy & Security > Camera
+   - Windows: Settings > Privacy > Camera
+   - Linux: Check v4l2 permissions
+
+2. Ensure no other applications are using the camera:
+   - Close Zoom, FaceTime, or other video applications
+   - Check for background processes
+
+3. Test camera access:
+   ```bash
+   python tests/test_camera.py
+   ```
+
+### Wrong Camera Selected
+
+1. Check `config/config.yaml`:
+   ```yaml
+   camera:
+     prefer_builtin: true
+     skip_continuity: true
+   ```
+
+2. The application logs available cameras on startup
+   - Check the console output for camera enumeration
+   - Adjust camera index if needed
+
+### Low Performance
+
+1. Reduce camera resolution in `config/config.yaml`:
+   ```yaml
+   camera:
+     width: 640
+     height: 480
+   ```
+
+2. Disable deep learning mode (press `d` key)
+
+3. Use `image` mode instead of `dl` mode
+
+4. Close other resource-intensive applications
+
+### Import Errors
+
+1. Ensure virtual environment is activated:
+   ```bash
+   source venv/bin/activate
+   ```
+
+2. Verify dependencies are installed:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Check Python version:
+   ```bash
+   python --version  # Should be 3.11 or higher
+   ```
+
+### Model Download Issues
+
+If ONNX or DeepFace models fail to download:
+1. Check internet connection
+2. Models are downloaded automatically on first use
+3. Model files are cached in `ai_face_persona/assets/`
+4. Delete cached models to force re-download
+
+## Development
+
+### Running Tests
+
+```bash
+# Test camera functionality
+python tests/test_camera.py
+
+# Verify imports
+python -c "from src.camera import CameraManager; from src.models import EmotionModel; print('OK')"
+```
+
+### Code Style
+
+The project follows PEP 8 style guidelines:
+- Type hints for all function signatures
+- Docstrings for all classes and functions
+- Clear variable naming
+- Modular architecture
+
+### Adding New Features
+
+1. Create feature branch: `git checkout -b feature/your-feature`
+2. Implement changes following existing code patterns
+3. Update configuration if needed
+4. Test thoroughly
+5. Submit pull request
+
+## Performance Optimization
+
+### For Better FPS
+
+1. Use `image` mode instead of `dl` mode
+2. Reduce camera resolution
+3. Disable unnecessary UI effects
+4. Use ONNX instead of DeepFace (faster)
+
+### For Better Accuracy
+
+1. Use `hybrid` or `dl` mode
+2. Increase camera resolution
+3. Ensure good lighting conditions
+4. Position face clearly in frame
+
+## Technical Details
+
+### Emotion Detection Algorithm
+
+The heuristic-based emotion detection uses:
+
+1. **Eye Aspect Ratio (EAR)**: Measures eye openness
+   - Calculated using 6 landmark points per eye
+   - Lower EAR indicates closed/squinting eyes
+   - Higher EAR indicates wide-open eyes
+
+2. **Mouth Aspect Ratio (MAR)**: Measures mouth opening
+   - Vertical and horizontal mouth dimensions
+   - Indicates smiling, talking, or surprise
+
+3. **Eyebrow Position**: Relative to eye position
+   - Raised eyebrows indicate surprise
+   - Lowered eyebrows indicate anger or concentration
+
+4. **Facial Asymmetry**: Left-right differences
+   - Asymmetry can indicate confusion or complex emotions
+   - Calculated from landmark positions
+
+### Smoothing Algorithm
+
+Emotion transitions are smoothed using exponential decay:
+- Recent emotions weighted more heavily
+- Prevents rapid label switching
+- Configurable decay factor in config
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Authors
+
+Ali Hamza & Zarmeena Jawad
+
+## Acknowledgments
+
+- MediaPipe team for face detection technology
+- OpenCV community for computer vision tools
+- Hugging Face for transformer models
+- All contributors and users of this project
+
+## Support
+
+For issues, questions, or contributions:
+- Check existing issues in the repository
+- Review the configuration documentation
+- Test with `tests/test_camera.py` for camera issues
+- Check logs in `logs/app.log` for detailed error messages
+
+---
+
+For detailed contribution guidelines, see CONTRIBUTING.md
