@@ -414,14 +414,14 @@ class EmotionModel:
         if onnxruntime is None:
             raise RuntimeError('onnxruntime not available')
 
-        assets_path = self.config.get('paths.models', 'ai_face_persona/assets')
+        assets_path = self.config.get('paths.models', 'assets')
         # Ensure path is relative to project root
         if not os.path.isabs(assets_path):
             # Try to find assets relative to current working directory or script location
             possible_paths = [
                 assets_path,
-                os.path.join('ai_face_persona', 'assets'),
-                os.path.join(os.path.dirname(__file__), '..', '..', 'ai_face_persona', 'assets'),
+                os.path.join('assets'),
+                os.path.join(os.path.dirname(__file__), '..', '..', 'assets'),
             ]
             for path in possible_paths:
                 if os.path.exists(path):

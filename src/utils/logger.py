@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 
-def get_logger(name: str = 'ai_face_persona', level: int = logging.INFO) -> logging.Logger:
+def get_logger(name: str = 'sentiment_analysis', level: int = logging.INFO) -> logging.Logger:
     """Get or create a logger instance.
     
     Args:

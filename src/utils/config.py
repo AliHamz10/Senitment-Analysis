@@ -75,9 +75,9 @@ class Config:
                 'neutral': 'Calm Sentinel',
             },
             'paths': {
-                'assets': 'ai_face_persona/assets',
+                'assets': 'assets',
                 'screenshots': 'screenshots',
-                'models': 'ai_face_persona/assets',
+                'models': 'assets',
             },
         }
     
